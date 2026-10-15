@@ -1,0 +1,12 @@
+# Local bundles and obfuscation output
+build/
+dist/
+
+# Luraph settings may hold an API key
+tools/luraph.json
+
+# Personal game scripts, kept out of the library repository
+scripts/
+
+# Python
+__pycache__/
