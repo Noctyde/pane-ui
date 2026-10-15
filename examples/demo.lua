@@ -1,5 +1,4 @@
 -- PaneUI demo: every element in one window.
--- Replace the URL with wherever you host src/PaneUI.lua.
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Noctyde/pane-ui/main/src/PaneUI.lua"))()
 
 local Window = Library:CreateWindow({

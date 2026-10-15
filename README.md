@@ -1,16 +1,16 @@
 # PaneUI
 
-UI-библиотека для скриптов в стиле macOS. Окно со «светофором», боковая панель с поиском как в System Settings, сгруппированные формы, светлая и тёмная тема, акцентный цвет, английский и русский интерфейс, масштаб под любое разрешение. Есть конфиги, уведомления-баннеры с центром уведомлений, палитра команд, диалоги, контекстное меню, подсказки, водяной знак и список кейбиндов. Всё двигается на пружинной физике, как в macOS.
+A macOS-style UI library for Roblox scripts. Windows with traffic-light buttons, a sidebar with search like System Settings, grouped forms, light and dark themes, an accent color, English and Russian interface, and scaling for any resolution. It comes with configs, notification banners with a notification center, a command palette, dialogs, a context menu, tooltips, a watermark and a keybind list. Everything moves on spring physics, like macOS.
 
 ```
-src/PaneUI.lua          библиотека, один файл: его и хостить
-examples/demo.lua       все элементы в одном окне
-types/PaneUI.luau       типы для автодополнения в редакторе
-tools/build-dev.sh      склеивает библиотеку со скриптом для теста без хостинга
-tools/obfuscate.py      обфускация через Luraph одной командой
+src/PaneUI.lua          the library, a single file: this is what you host
+examples/demo.lua       every element in one window
+types/PaneUI.luau       types for editor autocomplete
+tools/build-dev.sh      bundles the library with a script for testing without hosting
+tools/obfuscate.py      one-command Luraph obfuscation
 ```
 
-## Подключение
+## Getting started
 
 ```lua
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Noctyde/pane-ui/main/src/PaneUI.lua"))()
@@ -21,90 +21,90 @@ local Combat = Main:AddSection("Combat")
 
 Combat:AddToggle({ Title = "Auto farm", Flag = "AutoFarm", Callback = function(on) end })
 
-Window:AddSettingsTab()          -- тема, акцент, размер, язык, оверлеи, конфиги, выгрузка
-Library:LoadAutoloadConfig()     -- в конце, когда все элементы с Flag уже созданы
+Window:AddSettingsTab()          -- theme, accent, size, language, overlays, configs, unload
+Library:LoadAutoloadConfig()     -- last, once every element with a Flag exists
 ```
 
-## Что умеет окно
+## What the window can do
 
-- **Поиск.** Поле вверху боковой панели или Ctrl+F. Ищет по названиям, описаниям, секциям и вкладкам. Клик по результату открывает нужную вкладку, прокручивает к элементу и подсвечивает его.
-- **Правый клик по строке.** «Сбросить к умолчанию» и «Копировать значение».
-- **Подсказки.** `Tooltip = "..."` у любого элемента, появляются через полсекунды наведения.
-- **Палитра команд, Ctrl+K.** Работает даже при скрытом окне. Набираешь часть названия: тоггл переключается, кнопка срабатывает, остальное открывается в окне. Стрелки выбирают, Enter запускает, Esc закрывает.
-- **Центр уведомлений.** Колокольчик в заголовке окна показывает прошлые баннеры; красный счётчик — сколько пришло с последнего открытия.
-- **Светофор.** Красная кнопка спрашивает, выгрузить ли скрипт; жёлтая сворачивает окно в плашку внизу экрана; зелёная разворачивает на весь экран.
-- **Перетаскивание** за заголовок и **ресайз** за любой край или угол.
-- **Размытие игры** за открытым окном, включается в Settings. Roblox размывает весь 3D-мир, а не только область за окном; интерфейс остаётся чётким.
+- **Search.** The field at the top of the sidebar, or Ctrl+F. Searches titles, descriptions, sections and tabs. Clicking a result opens its tab, scrolls to the element and highlights it.
+- **Right-click a row** to reset it to its default or copy its value.
+- **Tooltips.** `Tooltip = "..."` on any element; it shows after half a second of hovering.
+- **Command palette, Ctrl+K.** Works even while the window is hidden. Type part of a name: toggles flip, buttons run, everything else opens in the window. Arrow keys select, Enter runs, Esc closes.
+- **Notification center.** The bell in the title bar shows past banners; the red badge counts the ones that arrived since you last opened it.
+- **Traffic lights.** Red asks whether to unload the script, yellow minimizes the window to a tile at the bottom of the screen, green zooms it to fill the screen.
+- **Drag** by the title bar and **resize** from any edge or corner.
+- **Blur the game** behind the open window, turned on in Settings. Roblox blurs the whole 3D world, not just the area behind the window; the interface stays sharp.
 
-### Анимации
-Свитчи, ползунки, сегменты, радиокнопки и меню двигаются на пружинах: слегка перелетают и упруго встают на место. Подсветка в боковой панели переезжает между вкладками. Новая страница въезжает снизу или сверху в зависимости от того, куда переключился, а её строки появляются каскадом. Числа у слайдеров, степперов и прогресса докручиваются до нового значения. Окно при перетаскивании «приподнимается»: тень становится глубже. Свёрнутое окно улетает по дуге в плашку внизу экрана, плашка подпрыгивает. Это эффект «Масштаб» из macOS: настоящий Genie требует изгибать окно, а GUI в Roblox так не умеет. Диалоги выезжают из-под заголовка, как sheet. Баннеры можно смахнуть вправо, при наведении их таймер замирает, полоска внизу показывает оставшееся время.
+### Animations
+Switches, sliders, segmented controls, radio buttons and menus move on springs: they overshoot slightly and settle into place. The sidebar highlight slides between tabs. A new page slides in from below or above depending on which way you switched, and its rows appear in a cascade. Numbers on sliders, steppers and progress bars count up to their new value. The window "lifts" while you drag it and its shadow deepens. A minimized window flies along an arc into the tile at the bottom of the screen, and the tile bounces. This is macOS's Scale effect: a real Genie effect needs to bend the window, which Roblox GUIs cannot do. Dialogs slide out from under the title bar like a sheet. Banners can be swiped away to the right, their timer pauses on hover, and a bar along the bottom shows the time left.
 
 ## API
 
 ### Library
 | | |
 |---|---|
-| `CreateWindow(opts)` | `Title`, `Subtitle`, `Icon`, `IconColor`, `Size` (UDim2 в пикселях), `MinSize`, `SidebarWidth`, `Theme` (`"Dark"`/`"Light"`), `Accent`, `Language` (`"en"`/`"ru"`), `Scale` (`"Auto"` или число, например `1.25`), `ToggleKey`, `ConfigFolder` (`false` отключает файлы), `Watermark`, `KeybindList`, `HideToDock` (клавиша окна сворачивает в плашку внизу, по умолчанию `true`; `false` прячет полностью), `Blur` (размытие игры за окном), `CloseBehavior` (`"Unload"` или `"Hide"`) |
-| `Notify(opts)` | `Title`, `Content`, `Type` (`"Info"`, `"Success"`, `"Warning"`, `"Error"`), `Duration`, `Buttons = { { Text, Style, Callback } }`, `Callback` при клике. Каждый баннер попадает в `NotificationHistory` и центр уведомлений |
-| `ClearNotifications()` | очищает историю уведомлений |
-| `SetTheme`, `SetAccent`, `SetScale`, `SetLanguage`, `SetToggleKey`, `SetWatermark`, `SetKeybindList`, `SetHideToDock`, `SetBlur` | меняют настройку, сохраняют её в `<ConfigFolder>/settings.json` и обновляют вкладку Settings. Сохранённый выбор пользователя перекрывает значения из `CreateWindow` |
-| `Options[flag]` | элемент по его `Flag` |
-| `SaveConfig`, `LoadConfig`, `DeleteConfig`, `ListConfigs` | конфиги в `<ConfigFolder>/configs/*.json` |
-| `ExportConfig()`, `ImportConfig(text)` | конфиг текстом, чтобы делиться без файлов |
-| `ResetAll()` | все элементы с `Flag` к значениям по умолчанию |
-| `SetAutoload`, `GetAutoload`, `LoadAutoloadConfig` | конфиг, который грузится при старте |
-| `CheckForUpdates({ Url, Current, Link, OnUpdate })` | читает `Url` (просто `1.2.0` или JSON `{"version":"1.2.0"}`) и показывает баннер, если версия новее `Current` |
-| `OnLanguageChanged(fn)` | `fn(code)` после каждой смены языка, чтобы скрипт переводил свои тексты. Текущий язык в `Library.Language` |
-| `OnUnload(fn)`, `Unload()` | остановить свои циклы при выгрузке. Повторный запуск скрипта с тем же `Title` сам выгружает прошлую копию |
-| `Icons`, `Languages`, `Themes`, `Accents` | набор иконок, переводы, палитры тем, пресеты акцента |
+| `CreateWindow(opts)` | `Title`, `Subtitle`, `Icon`, `IconColor`, `Size` (UDim2 in pixels), `MinSize`, `SidebarWidth`, `Theme` (`"Dark"`/`"Light"`), `Accent`, `Language` (`"en"`/`"ru"`), `Scale` (`"Auto"` or a number such as `1.25`), `ToggleKey`, `ConfigFolder` (`false` disables files), `Watermark`, `KeybindList`, `HideToDock` (the window key minimizes to a tile at the bottom, `true` by default; `false` hides it completely), `Blur` (blur the game behind the window), `CloseBehavior` (`"Unload"` or `"Hide"`) |
+| `Notify(opts)` | `Title`, `Content`, `Type` (`"Info"`, `"Success"`, `"Warning"`, `"Error"`), `Duration`, `Buttons = { { Text, Style, Callback } }`, `Callback` on click. Every banner goes into `NotificationHistory` and the notification center |
+| `ClearNotifications()` | clears the notification history |
+| `SetTheme`, `SetAccent`, `SetScale`, `SetLanguage`, `SetToggleKey`, `SetWatermark`, `SetKeybindList`, `SetHideToDock`, `SetBlur` | change a setting, save it to `<ConfigFolder>/settings.json` and update the Settings tab. The user's saved choice overrides the values passed to `CreateWindow` |
+| `Options[flag]` | an element by its `Flag` |
+| `SaveConfig`, `LoadConfig`, `DeleteConfig`, `ListConfigs` | configs in `<ConfigFolder>/configs/*.json` |
+| `ExportConfig()`, `ImportConfig(text)` | a config as text, for sharing without files |
+| `ResetAll()` | resets every element with a `Flag` to its default |
+| `SetAutoload`, `GetAutoload`, `LoadAutoloadConfig` | the config that loads on startup |
+| `CheckForUpdates({ Url, Current, Link, OnUpdate })` | reads `Url` (plain `1.2.0` or JSON `{"version":"1.2.0"}`) and shows a banner if it is newer than `Current` |
+| `OnLanguageChanged(fn)` | `fn(code)` after every language change, so the script can translate its own text. The current language is in `Library.Language` |
+| `OnUnload(fn)`, `Unload()` | stop your own loops on unload. Running the script again with the same `Title` unloads the previous copy by itself |
+| `Icons`, `Languages`, `Themes`, `Accents` | the icon set, translations, theme palettes, accent presets |
 
-### Иконки
-`Icon` у окна и вкладок принимает имя из `Library.Icons`, ID картинки или короткий символ. Без иконки рисуется первая буква названия. В наборе 85 иконок Lucide: `home`, `settings`, `user`, `users`, `eye`, `eye-off`, `sword`, `swords`, `crosshair`, `target`, `shield`, `flame`, `star`, `heart`, `map`, `map-pin`, `compass`, `globe`, `search`, `info`, `alert-triangle`, `alert-circle`, `check`, `x`, `bell`, `clock`, `folder`, `file`, `save`, `download`, `upload`, `copy`, `trash`, `trash-2`, `pencil`, `refresh-cw`, `rotate-ccw`, `play`, `pause`, `power`, `lock`, `unlock`, `key`, `keyboard`, `mouse-pointer`, `gamepad-2`, `monitor`, `palette`, `paintbrush`, `sun`, `moon`, `wand-2`, `bot`, `box`, `package`, `gift`, `coins`, `gem`, `shopping-cart`, `trophy`, `crown`, `flag`, `rocket`, `car`, `move`, `activity`, `bar-chart`, `code`, `terminal`, `bug`, `wrench`, `sliders`, `layers`, `list`, `layout-grid`, `command`, `axe`, `skull`, `ghost`, `wifi`, `cloud`, `message-circle`, `music`, `camera`, `image`.
+### Icons
+`Icon` on the window and tabs takes a name from `Library.Icons`, an image ID or a short glyph. Without an icon, the first letter of the title is drawn. The set has 85 Lucide icons: `home`, `settings`, `user`, `users`, `eye`, `eye-off`, `sword`, `swords`, `crosshair`, `target`, `shield`, `flame`, `star`, `heart`, `map`, `map-pin`, `compass`, `globe`, `search`, `info`, `alert-triangle`, `alert-circle`, `check`, `x`, `bell`, `clock`, `folder`, `file`, `save`, `download`, `upload`, `copy`, `trash`, `trash-2`, `pencil`, `refresh-cw`, `rotate-ccw`, `play`, `pause`, `power`, `lock`, `unlock`, `key`, `keyboard`, `mouse-pointer`, `gamepad-2`, `monitor`, `palette`, `paintbrush`, `sun`, `moon`, `wand-2`, `bot`, `box`, `package`, `gift`, `coins`, `gem`, `shopping-cart`, `trophy`, `crown`, `flag`, `rocket`, `car`, `move`, `activity`, `bar-chart`, `code`, `terminal`, `bug`, `wrench`, `sliders`, `layers`, `list`, `layout-grid`, `command`, `axe`, `skull`, `ghost`, `wifi`, `cloud`, `message-circle`, `music`, `camera`, `image`.
 
 ### Window
-`AddTab({ Title, Icon, IconColor })` · `AddSidebarHeader(text)` (возвращает TextLabel) · `SetSubtitle(text)` · `AddSettingsTab()` · `SelectTab(tab | index)` · `Reveal(element)` · `Dialog({ Title, Content, Buttons = { { Title, Style, Callback } } })` · `SetVisible(bool)` · `Toggle()` · `Minimize()` · `Restore()` · `Zoom()` · `Close()` · `OpenPalette()` · `ClosePalette()` · `OpenNotificationCenter()` · `CloseNotificationCenter()` · `ToggleNotificationCenter()`
+`AddTab({ Title, Icon, IconColor })` · `AddSidebarHeader(text)` (returns a TextLabel) · `SetSubtitle(text)` · `AddSettingsTab()` · `SelectTab(tab | index)` · `Reveal(element)` · `Dialog({ Title, Content, Buttons = { { Title, Style, Callback } } })` · `SetVisible(bool)` · `Toggle()` · `Minimize()` · `Restore()` · `Zoom()` · `Close()` · `OpenPalette()` · `ClosePalette()` · `OpenNotificationCenter()` · `CloseNotificationCenter()` · `ToggleNotificationCenter()`
 
-Страница вкладки подключается к окну только при первом открытии, поэтому вкладки, которые пользователь не открывал, ничего не стоят при запуске. На 6 вкладках по 50 элементов создание окна вышло 64 мс против 114 мс без этого.
+A tab's page is attached to the window only when it is first opened, so tabs the user never opens cost nothing at startup. With 6 tabs of 50 elements each, building the window took 64 ms instead of 114 ms.
 
-### Tab и Section
-`Tab:AddSection("Title")` или `Tab:AddSection({ Title, Collapsible = true, Collapsed = true })` для сворачиваемой секции. `Tab:SetTitle(text)` и `Section:SetTitle(text)` меняют заголовок; у секции без заголовка его нет. Элементы можно добавлять и прямо во вкладку, они попадут в группу без заголовка.
+### Tab and Section
+`Tab:AddSection("Title")`, or `Tab:AddSection({ Title, Collapsible = true, Collapsed = true })` for a collapsible section. `Tab:SetTitle(text)` and `Section:SetTitle(text)` change the title; a section created without a title has none. Elements can also be added straight to a tab, where they go into a group without a title.
 
-У всех элементов есть общие параметры `Title`, `Description`, `Tooltip`, `Flag`, `Disabled`, `Callback`.
+Every element takes `Title`, `Description`, `Tooltip`, `Flag`, `Disabled` and `Callback`.
 
-| Элемент | Свои параметры |
+| Element | Its own options |
 |---|---|
-| `AddButton` | без кнопок кликается вся строка; `ButtonText` + `Style` дают одну кнопку справа; `Buttons = { { Text, Style, Callback } }` несколько. `Style`: `"Primary"`, `"Destructive"` |
+| `AddButton` | with no buttons the whole row is clickable; `ButtonText` + `Style` give one button on the right; `Buttons = { { Text, Style, Callback } }` gives several. `Style`: `"Primary"`, `"Destructive"` |
 | `AddToggle` | `Default` |
 | `AddCheckbox` | `Default` |
 | `AddRadio` | `Values`, `Default` |
 | `AddSlider` | `Min`, `Max`, `Default`, `Step`, `Suffix` |
-| `AddStepper` | `Min`, `Max`, `Default`, `Step`, `Suffix`, `Width`; кнопки − и +, удержание повторяет шаг |
-| `AddDropdown` | `Values`, `Default`, `Multi`, `AllowNone`, `Searchable` (по умолчанию при 9+ значениях), `Width`, `ItemText(value)`, `ItemIcon(value)` |
-| `AddPlayerDropdown` | `Multi`, `AllowNone`, `ExcludeLocalPlayer`; список игроков с аватарками, сам обновляется. `:GetPlayer()` возвращает Player |
-| `AddInput` | `Default`, `Placeholder`, `Numeric`, `MaxLength`, `Width`, `Finished` (`false`: колбэк на каждый символ) |
+| `AddStepper` | `Min`, `Max`, `Default`, `Step`, `Suffix`, `Width`; − and + buttons, holding one keeps stepping |
+| `AddDropdown` | `Values`, `Default`, `Multi`, `AllowNone`, `Searchable` (on by default with 9+ values), `Width`, `ItemText(value)`, `ItemIcon(value)` |
+| `AddPlayerDropdown` | `Multi`, `AllowNone`, `ExcludeLocalPlayer`; a player list with avatars that updates itself. `:GetPlayer()` returns the Player |
+| `AddInput` | `Default`, `Placeholder`, `Numeric`, `MaxLength`, `Width`, `Finished` (`false`: callback on every character) |
 | `AddTextArea` | `Default`, `Placeholder`, `Height`, `Finished` |
-| `AddKeybind` | `Default` (`Enum.KeyCode.F`, `MouseButton2`, `"F"` или `"Ctrl+F"`), `Mode` (`"Toggle"`, `"Hold"`, `"Always"`), `AllowModifiers`, `ChangedCallback(key, modifiers)` |
-| `AddColorPicker` | `Default`, `Transparency` (включает ползунок прозрачности), `Rainbow`, `RainbowSpeed`; колбэк получает `(color, transparency)` |
+| `AddKeybind` | `Default` (`Enum.KeyCode.F`, `MouseButton2`, `"F"` or `"Ctrl+F"`), `Mode` (`"Toggle"`, `"Hold"`, `"Always"`), `AllowModifiers`, `ChangedCallback(key, modifiers)` |
+| `AddColorPicker` | `Default`, `Transparency` (adds an opacity slider), `Rainbow`, `RainbowSpeed`; the callback gets `(color, transparency)` |
 | `AddSegmented` | `Values`, `Default` |
-| `AddProgress` | `Value` (0..1 или 0..`Max`), `Max`, `Indeterminate`; `:SetValue(v)`, `:SetIndeterminate(bool)` |
+| `AddProgress` | `Value` (0..1 or 0..`Max`), `Max`, `Indeterminate`; `:SetValue(v)`, `:SetIndeterminate(bool)` |
 | `AddSpinner` | `Spinning`; `:SetSpinning(bool)` |
 | `AddLabel(text)` | `:SetText` |
 | `AddParagraph({ Title, Content })` | `:SetContent` |
 
-Общие методы элементов: `Value`, `SetValue(value, silent)`, `OnChanged(fn)`, `SetTitle`, `SetDescription`, `SetTooltip`, `SetVisible`, `SetDisabled`, `Reset`, `Destroy`. Плюс `Dropdown:SetValues(list)`, `Slider:SetRange(min, max)`, `Keybind:GetState()`, `ColorPicker:SetTransparency(t)` и `:SetRainbow(bool)`.
+Methods every element has: `Value`, `SetValue(value, silent)`, `OnChanged(fn)`, `SetTitle`, `SetDescription`, `SetTooltip`, `SetVisible`, `SetDisabled`, `Reset`, `Destroy`. Plus `Dropdown:SetValues(list)`, `Slider:SetRange(min, max)`, `Keybind:GetState()`, `ColorPicker:SetTransparency(t)` and `:SetRainbow(bool)`.
 
-Колбэки не вызываются при создании элемента, только при изменении, в том числе при загрузке конфига. Начальное значение читай из `.Value`.
+Callbacks do not fire when an element is created, only when its value changes, including when a config loads. Read the initial value from `.Value`.
 
-### Свой язык
-Добавь таблицу с теми же ключами, что в `Library.Languages.en`, и пункт в `LanguageNames`. Язык должен быть добавлен до создания окна:
+### Adding a language
+Add a table with the same keys as `Library.Languages.en` and an entry in `LanguageNames`. Do this before creating the window:
 
 ```lua
 Library.Languages.de = { Settings = "Einstellungen", ... }
 table.insert(Library.LanguageNames, { Code = "de", Name = "Deutsch" })
 ```
 
-### Перевод своего скрипта
-Библиотека переводит только свои строки. Тексты скрипта меняй в `Library:OnLanguageChanged`: у элементов есть `SetTitle`, `SetDescription` и `SetTooltip`, у вкладок и секций `SetTitle`, у окна `SetSubtitle`.
+### Translating your script
+The library translates only its own strings. Change your script's text in `Library:OnLanguageChanged`: elements have `SetTitle`, `SetDescription` and `SetTooltip`, tabs and sections have `SetTitle`, and the window has `SetSubtitle`.
 
 ```lua
 local Texts = {
@@ -124,60 +124,60 @@ Library:OnLanguageChanged(function()
 end)
 ```
 
-## Автодополнение
-Скопируй содержимое `types/PaneUI.luau` в начало скрипта и укажи тип:
+## Autocomplete
+Copy the contents of `types/PaneUI.luau` to the top of your script and annotate the type:
 
 ```lua
 local Library: PaneUI = loadstring(game:HttpGet(URL))()
 ```
 
-Типы нужны только редактору. Если обфускатор не примет аннотации типов, удали этот блок перед обфускацией, скрипт работает так же.
+The types are only for the editor. If your obfuscator rejects type annotations, remove that block before obfuscating; the script works the same.
 
-## Обфускация
+## Obfuscation
 
-Библиотека написана на синтаксисе Lua 5.1 (без `+=`, `continue`, строковой интерполяции и аннотаций типов) и не содержит макросов обфускаторов. Поэтому её примет любой обфускатор любой версии: Luraph v14 и v15, Luarmor и другие.
+The library uses Lua 5.1 syntax (no `+=`, `continue`, string interpolation or type annotations) and contains no obfuscator macros, so any obfuscator of any version accepts it: Luraph v14 and v15, Luarmor and others.
 
-Обфусцировать саму библиотеку не обязательно: это интерфейс без секретов. Проще держать её открытой на GitHub, подключать через `loadstring`, а защищать только свой скрипт. Публичные методы — это строковые ключи таблиц, обфускатор их не меняет, поэтому скрипт работает одинаково и с обфусцированной, и с обычной библиотекой.
+You don't need to obfuscate the library itself: it is an interface with no secrets. It is simpler to keep it public on GitHub, load it with `loadstring` and protect only your own script. Public methods are string table keys, which obfuscators leave alone, so your script works the same with an obfuscated or a plain library.
 
-Если в своих скриптах используешь макросы Luraph, учти: в v15 старые `LPH_NO_VIRTUALIZE`, `LPH_JIT`, `LPH_NO_UPVALUES` и `LPH_ENCFUNC` удалены, их заменили атрибуты вроде `LPH_ATTRIBUTES(VM(NONE))`. И v14, и v15 падают при обфускации на любом незнакомом макросе с префиксом `LPH`, поэтому синтаксис должен совпадать с версией, которой обфусцируешь. Luarmor обфусцирует через Luraph, а в его документации пока описан только `LPH_NO_VIRTUALIZE` из v14.
+If your own scripts use Luraph macros, note that v15 removed the old `LPH_NO_VIRTUALIZE`, `LPH_JIT`, `LPH_NO_UPVALUES` and `LPH_ENCFUNC` in favor of attributes such as `LPH_ATTRIBUTES(VM(NONE))`. Both v14 and v15 fail on any unknown macro starting with `LPH`, so the syntax has to match the version you obfuscate with. Luarmor obfuscates through Luraph, and its documentation currently describes only `LPH_NO_VIRTUALIZE` from v14.
 
-### Luraph одной командой
-Если у тебя есть доступ к API Luraph (он есть не на всех тарифах), `tools/obfuscate.py` отправит файл в Luraph, дождётся результата и положит его в `dist/`. Нужен Python 3 без дополнительных пакетов.
+### Luraph in one command
+If you have Luraph API access (not every plan includes it), `tools/obfuscate.py` sends a file to Luraph, waits for the result and saves it to `dist/`. It needs Python 3 and no extra packages.
 
 ```bash
 python tools/obfuscate.py --list-options
 ```
 
-Покажет опции твоего узла Luraph и допустимые значения. Нужные запиши в `tools/luraph.json` по образцу `tools/luraph.example.json` или передавай как `--option ИМЯ=ЗНАЧЕНИЕ`.
+Lists the options your Luraph node accepts and their allowed values. Put the ones you want in `tools/luraph.json`, following `tools/luraph.example.json`, or pass them as `--option NAME=VALUE`.
 
 ```bash
 python tools/obfuscate.py
 ```
 
-Обфусцирует `src/PaneUI.lua` в `dist/PaneUI.lua`.
+Obfuscates `src/PaneUI.lua` into `dist/PaneUI.lua`.
 
 ```bash
 python tools/obfuscate.py --bundle scripts/my-script.lua
 ```
 
-Вклеит библиотеку прямо в скрипт (без `loadstring`) и обфусцирует всё одним файлом в `dist/my-script.lua`. Без `--bundle` обфусцируется только сам скрипт.
+Inlines the library into the script (no `loadstring`) and obfuscates everything as one file into `dist/my-script.lua`. Without `--bundle`, only the script itself is obfuscated.
 
-Ключ берётся из `--key`, из переменной окружения `LURAPH_API_KEY` или из поля `"key"` в `tools/luraph.json`. Удобнее всего один раз сохранить переменную в Windows: `setx LURAPH_API_KEY "ключ"` (работает в PowerShell, cmd и Git Bash), после этого открыть терминал заново. Если ключ лежит в `tools/luraph.json`, не публикуй этот файл. `--dry-run` показывает, что уйдёт в API, ничего не отправляя.
+The key comes from `--key`, the `LURAPH_API_KEY` environment variable, or the `"key"` field in `tools/luraph.json`. The easiest way on Windows is to save the variable once with `setx LURAPH_API_KEY "your-key"` (works from PowerShell, cmd and Git Bash) and then reopen the terminal. If you keep the key in `tools/luraph.json`, don't publish that file. `--dry-run` shows what would be sent to the API without sending anything.
 
-## Тест в игре без хостинга
+## Testing in game without hosting
 
 ```bash
 tools/build-dev.sh examples/demo.lua
 ```
 
-Скрипт склеит библиотеку и демо в `build/dev.lua`, строка с `loadstring` вырезается. Этот файл можно сразу запускать в экзекуторе.
+Bundles the library and the demo into `build/dev.lua` with the `loadstring` line cut out. You can run that file in your executor right away.
 
-## Лицензия
+## License
 
-[MIT](LICENSE): библиотеку можно использовать где угодно, в том числе в закрытых и обфусцированных скриптах, если сохранять строку с авторством из `LICENSE`.
+[MIT](LICENSE): use the library anywhere, including closed-source and obfuscated scripts, as long as you keep the copyright line from `LICENSE`.
 
-## Благодарности
+## Credits
 
-- Иконки — [Lucide](https://lucide.dev), лицензия ISC, © Lucide Icons and Contributors.
-- Таблица ID этих иконок, загруженных в Roblox, взята из [Fluent](https://github.com/dawid-scripts/Fluent), лицензия MIT, © 2023 dawid.
-- Шрифт — Inter, его раздаёт сам Roblox.
+- Icons: [Lucide](https://lucide.dev), ISC license, © Lucide Icons and Contributors.
+- The table of Roblox asset IDs for these icons comes from [Fluent](https://github.com/dawid-scripts/Fluent), MIT license, © 2023 dawid.
+- Font: Inter, served by Roblox itself.
