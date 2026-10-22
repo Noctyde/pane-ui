@@ -40,6 +40,16 @@ type Element = {
 
 type ButtonInfo = { Text: string, Style: Style?, Callback: (() -> ())? }
 
+type PaletteItem = {
+    Title: string,
+    Path: string?,
+    Icon: string?,
+    IconColor: Color3?,
+    Hint: string?,
+    Keywords: string?,
+    Run: () -> (),
+}
+
 type ButtonOptions = {
     Title: string?,
     Description: string?,
@@ -386,6 +396,8 @@ type PaneUI = {
     GetAutoload: (self: PaneUI) -> string?,
     LoadAutoloadConfig: (self: PaneUI) -> boolean,
     CheckForUpdates: (self: PaneUI, opts: { Url: string, Current: string, Link: string?, OnUpdate: ((version: string) -> ())? }) -> (),
+    AddPaletteProvider: (self: PaneUI, provider: () -> { PaletteItem }) -> (),
     OnUnload: (self: PaneUI, callback: () -> ()) -> (),
     Unload: (self: PaneUI) -> (),
+    Kit: { [string]: any },
 }

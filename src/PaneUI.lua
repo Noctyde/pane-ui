@@ -44,7 +44,7 @@ end
 --==============================================================
 
 local Library = {
-    Version = "1.4.0",
+    Version = "1.5.0",
     Options = {},
     Windows = {},
     Unloaded = false,
@@ -5966,15 +5966,22 @@ end
 --==============================================================
 
 local Palette -- the open palette, if any
-local PALETTE_WIDTH, PALETTE_ROW, PALETTE_ROWS = 560, 44, 8
+local PALETTE_WIDTH, PALETTE_ROW, PALETTE_ROWS, PALETTE_MAX = 560, 44, 8, 60
 
-local function PaletteItems(window, query)
+-- Items a script adds beside the windows' own: each provider returns a
+-- list of { Title, Path, Icon, IconColor, Hint, Keywords, Run }, asked
+-- again on every keystroke, and the palette keeps the ones that match.
+local PaletteProviders = {}
+
+function Library:AddPaletteProvider(provider)
+    table.insert(PaletteProviders, provider)
+end
+
+-- The tabs and options of one window. With several windows the path
+-- starts with the window's title.
+local function WindowItems(window, items, matches)
     local strings = Library.Strings
-    local items = {}
-    query = string.lower(Trim(query))
-    local function matches(text)
-        return query == "" or string.find(string.lower(text), query, 1, true) ~= nil
-    end
+    local prefix = #Library.Windows > 1 and window.Title ~= "" and (window.Title .. " › ") or ""
     local function show(callback)
         return function()
             window:SetVisible(true)
@@ -5983,10 +5990,10 @@ local function PaletteItems(window, query)
     end
 
     for _, tab in ipairs(window.Tabs) do
-        if matches(tab.Title) then
+        if matches(tab.Title .. " " .. prefix) then
             table.insert(items, {
                 Title = tab.Title,
-                Path = strings.Tab,
+                Path = prefix .. strings.Tab,
                 Tab = tab,
                 Hint = strings.Show,
                 Run = show(function()
@@ -6000,7 +6007,7 @@ local function PaletteItems(window, query)
         local section = element.Section
         local tab = section.Tab
         if element.Row and element.Row.Visible and element.Title and element.Title ~= "" and not element.Disabled then
-            local path = tab.Title
+            local path = prefix .. tab.Title
             if section.Title and section.Title ~= "" then
                 path = path .. " › " .. section.Title
             end
@@ -6050,9 +6057,33 @@ local function PaletteItems(window, query)
                 end
             end
         end
-        if #items >= 60 then
+        if #items >= PALETTE_MAX then
             break
         end
+    end
+end
+
+local function PaletteItems(query)
+    local items = {}
+    query = string.lower(Trim(query))
+    local function matches(text)
+        return query == "" or string.find(string.lower(text), query, 1, true) ~= nil
+    end
+    for _, provider in ipairs(PaletteProviders) do
+        local ok, list = pcall(provider)
+        if ok and type(list) == "table" then
+            for _, item in ipairs(list) do
+                if #items < PALETTE_MAX and matches(tostring(item.Title) .. " " .. (item.Path or "") .. " " .. (item.Keywords or "")) then
+                    table.insert(items, item)
+                end
+            end
+        end
+    end
+    for _, window in ipairs(Library.Windows) do
+        if #items >= PALETTE_MAX then
+            break
+        end
+        WindowItems(window, items, matches)
     end
     return items
 end
@@ -6179,7 +6210,7 @@ function Window:OpenPalette()
             end
         end
         state.Rows = {}
-        state.Items = PaletteItems(self, box.Text)
+        state.Items = PaletteItems(box.Text)
         state.Selected = math.clamp(state.Selected, 1, math.max(#state.Items, 1))
         local count = #state.Items
         divider.Visible = true
@@ -6201,7 +6232,8 @@ function Window:OpenPalette()
             })
             Corner(8, row)
             Bind(row, { BackgroundColor3 = "Accent" })
-            local icon = AppIcon(row, 26, item.Tab.Icon, item.Tab.IconColor, item.Tab.Title, 7)
+            local tab = item.Tab or {}
+            local icon = AppIcon(row, 26, item.Icon or tab.Icon, item.IconColor or tab.IconColor, tab.Title or item.Title, 7)
             icon.Position = UDim2.fromOffset(10, 9)
             local title = New("TextLabel", {
                 Text = item.Title,
@@ -7542,5 +7574,78 @@ function Library:Unload()
 end
 
 Library.UIScale = CurrentScale()
+
+--==============================================================
+-- Kit: the building blocks the library itself is made of, for scripts
+-- that draw their own pieces (a HUD, a splash screen) and want them to
+-- look the same and follow the theme, accent, scale and language.
+-- Instances made with Kit.New live in the library's ScreenGui when
+-- parented to Kit.GetScreenGui(), and Library:Unload() removes them.
+--==============================================================
+
+Library.Kit = {
+    -- Instances and layout
+    New = New,
+    Corner = Corner,
+    Pad = Pad,
+    List = List,
+    FitText = FitText,
+    TextWidth = TextWidth,
+    GetScreenGui = GetScreenGui,
+    RandomName = RandomName,
+    -- Theme: Bind(instance, { Property = "ThemeKey" | function(theme) })
+    Bind = Bind,
+    Refresh = Refresh,
+    -- Scale and language
+    ScaleTarget = ScaleTarget,
+    EffectiveScale = EffectiveScale,
+    CurrentScale = CurrentScale,
+    OnLanguage = OnLanguage,
+    -- Motion
+    Tween = Tween,
+    Tweens = Tweens,
+    Spring = Spring,
+    SpringKick = SpringKick,
+    StopSpring = StopSpring,
+    Animate = Animate,
+    Bezier = Bezier,
+    EaseOutCubic = EaseOutCubic,
+    EaseInCubic = EaseInCubic,
+    EaseInOutCubic = EaseInOutCubic,
+    CountTo = CountTo,
+    -- Visual pieces
+    Fonts = Fonts,
+    IconPalette = IconPalette,
+    StatusStyles = StatusStyles,
+    TrafficColors = TrafficColors,
+    Shadow = Shadow,
+    RefreshShadow = RefreshShadow,
+    Bar = Bar,
+    Chevron = Chevron,
+    Checkmark = Checkmark,
+    AppIcon = AppIcon,
+    ResolveIcon = ResolveIcon,
+    PushButton = PushButton,
+    UpdateBlur = UpdateBlur,
+    -- Input and events; Connect's connections end on Unload
+    Connect = Connect,
+    TrackDrag = TrackDrag,
+    GuiPosition = GuiPosition,
+    PointerPosition = PointerPosition,
+    IsClick = IsClick,
+    KeyName = KeyName,
+    InputMatches = InputMatches,
+    SafeCall = SafeCall,
+    Spawn = Spawn,
+}
+
+-- Reads <folder>/settings.json before any window exists, so pieces shown
+-- first (a splash screen) already use the user's theme, accent and scale.
+function Library.Kit.LoadSettings(folder)
+    Library.Folder = folder
+    Library:_loadSettings()
+    BuildTheme()
+    Library.UIScale = CurrentScale()
+end
 
 return Library

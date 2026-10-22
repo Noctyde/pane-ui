@@ -25,12 +25,14 @@ Window:AddSettingsTab()          -- theme, accent, size, language, overlays, con
 Library:LoadAutoloadConfig()     -- last, once every element with a Flag exists
 ```
 
+`main` always holds the newest version. To keep a script on one version, load a release tag instead, for example `https://raw.githubusercontent.com/Noctyde/pane-ui/v1.5.0/src/PaneUI.lua`; `Library.Version` says which one is running.
+
 ## What the window can do
 
 - **Search.** The field at the top of the sidebar, or Ctrl+F. Searches titles, descriptions, sections and tabs. Clicking a result opens its tab, scrolls to the element and highlights it.
 - **Right-click a row** to reset it to its default or copy its value.
 - **Tooltips.** `Tooltip = "..."` on any element; it shows after half a second of hovering.
-- **Command palette, Ctrl+K.** Works even while the window is hidden. Type part of a name: toggles flip, buttons run, everything else opens in the window. Arrow keys select, Enter runs, Esc closes.
+- **Command palette, Ctrl+K.** Works even while the window is hidden and searches every window. Type part of a name: toggles flip, buttons run, everything else opens in the window. Arrow keys select, Enter runs, Esc closes. A script can add its own commands with `AddPaletteProvider`.
 - **Notification center.** The bell in the title bar shows past banners; the red badge counts the ones that arrived since you last opened it.
 - **Traffic lights.** Red asks whether to unload the script, yellow minimizes the window to a tile at the bottom of the screen, green zooms it to fill the screen.
 - **Drag** by the title bar and **resize** from any edge or corner.
@@ -55,6 +57,7 @@ Switches, sliders, segmented controls, radio buttons and menus move on springs: 
 | `SetAutoload`, `GetAutoload`, `LoadAutoloadConfig` | the config that loads on startup |
 | `CheckForUpdates({ Url, Current, Link, OnUpdate })` | reads `Url` (plain `1.2.0` or JSON `{"version":"1.2.0"}`) and shows a banner if it is newer than `Current` |
 | `OnLanguageChanged(fn)` | `fn(code)` after every language change, so the script can translate its own text. The current language is in `Library.Language` |
+| `AddPaletteProvider(fn)` | adds commands to the palette: `fn()` returns a list of `{ Title, Path, Icon, IconColor, Hint, Keywords, Run }`, is asked again on every keystroke, and the palette keeps the items whose title, path or keywords match |
 | `OnUnload(fn)`, `Unload()` | stop your own loops on unload. Running the script again with the same `Title` unloads the previous copy by itself |
 | `Icons`, `Languages`, `Themes`, `Accents` | the icon set, translations, theme palettes, accent presets |
 
@@ -122,6 +125,16 @@ Library:OnLanguageChanged(function()
     Main:SetTitle(T("Main"))
     AutoFarm:SetTitle(T("AutoFarm"))
 end)
+```
+
+### Drawing your own pieces
+`Library.Kit` holds the building blocks the library is made of, for a script that draws something of its own (a HUD, a splash screen) and wants it to look the same: `New`, `Bind` (keeps a property in sync with the theme), `Spring`, `Animate`, `Shadow`, `AppIcon`, `PushButton`, `ScaleTarget`, `Connect`, `Fonts` and the rest. Parent your instances to `Kit.GetScreenGui()` and they follow theme, accent and scale changes and go away on `Unload()`. `Kit.LoadSettings(folder)` reads the saved theme, accent and scale before any window exists.
+
+```lua
+local Kit = Library.Kit
+local panel = Kit.Bind(Kit.New("Frame", { Size = UDim2.fromOffset(200, 60), Parent = Kit.GetScreenGui() }), { BackgroundColor3 = "Popup" })
+Kit.Corner(14, panel)
+Kit.ScaleTarget(Kit.New("UIScale", { Parent = panel }))
 ```
 
 ## Autocomplete
