@@ -44,7 +44,7 @@ end
 --==============================================================
 
 local Library = {
-    Version = "1.5.0",
+    Version = "1.5.1",
     Options = {},
     Windows = {},
     Unloaded = false,
@@ -953,13 +953,43 @@ local function PointerPosition(input)
     return UserInputService:GetMouseLocation()
 end
 
+-- Every GuiObject under the pointer gets InputBegan, not only the one on
+-- top, so the handles of windows lying on each other would all start
+-- dragging (and a slider under a window would move with a click on it).
+-- Handles that got the same press are collected and, at the end of the
+-- frame, only the one drawn on top starts.
+local DragClaims = {}
+
+local function TopClaim(claims, position)
+    if #claims == 1 then
+        return claims[1]
+    end
+    local gui = claims[1].Handle:FindFirstAncestorOfClass("ScreenGui")
+    local base = gui and gui:FindFirstAncestorWhichIsA("BasePlayerGui")
+    if not base then
+        return nil
+    end
+    -- GetGuiObjectsAtPosition works in AbsolutePosition space, ordered
+    -- from the top down.
+    local point = position + gui.AbsolutePosition
+    local ok, found = pcall(base.GetGuiObjectsAtPosition, base, point.X, point.Y)
+    if not ok then
+        return nil
+    end
+    for _, object in ipairs(found) do
+        for _, claim in ipairs(claims) do
+            if object == claim.Handle or object:IsDescendantOf(claim.Handle) then
+                return claim
+            end
+        end
+    end
+    return nil
+end
+
 -- Calls onMove for every pointer move between press and release on `handle`.
 -- onBegin may return false to ignore the press.
 local function TrackDrag(handle, onBegin, onMove, onEnd)
-    handle.InputBegan:Connect(function(input)
-        if not IsClick(input) then
-            return
-        end
+    local function start(input)
         if onBegin and onBegin(PointerPosition(input), input) == false then
             return
         end
@@ -979,6 +1009,27 @@ local function TrackDrag(handle, onBegin, onMove, onEnd)
                 end
             end
         end)
+    end
+    handle.InputBegan:Connect(function(input)
+        if not IsClick(input) then
+            return
+        end
+        local claims = DragClaims[input]
+        if not claims then
+            claims = {}
+            DragClaims[input] = claims
+            task.defer(function()
+                DragClaims[input] = nil
+                -- When the top one cannot be told, all start, as before.
+                local winner = TopClaim(claims, PointerPosition(input))
+                for _, claim in ipairs(claims) do
+                    if winner == nil or claim == winner then
+                        claim.Start(input)
+                    end
+                end
+            end)
+        end
+        table.insert(claims, { Handle = handle, Start = start })
     end)
 end
 

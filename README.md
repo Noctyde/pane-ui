@@ -25,7 +25,7 @@ Window:AddSettingsTab()          -- theme, accent, size, language, overlays, con
 Library:LoadAutoloadConfig()     -- last, once every element with a Flag exists
 ```
 
-`main` always holds the newest version. To keep a script on one version, load a release tag instead, for example `https://raw.githubusercontent.com/Noctyde/pane-ui/v1.5.0/src/PaneUI.lua`; `Library.Version` says which one is running.
+`main` always holds the newest version. To keep a script on one version, load a release tag instead, for example `https://raw.githubusercontent.com/Noctyde/pane-ui/v1.5.1/src/PaneUI.lua`; `Library.Version` says which one is running.
 
 ## What the window can do
 
