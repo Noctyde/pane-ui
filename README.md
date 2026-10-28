@@ -21,11 +21,11 @@ local Combat = Main:AddSection("Combat")
 
 Combat:AddToggle({ Title = "Auto farm", Flag = "AutoFarm", Callback = function(on) end })
 
-Window:AddSettingsTab()          -- theme, accent, size, language, overlays, configs, unload
+Window:AddSettingsTab()          -- theme, style, accent, size, language, overlays, configs, unload
 Library:LoadAutoloadConfig()     -- last, once every element with a Flag exists
 ```
 
-`main` always holds the newest version. To keep a script on one version, load a release tag instead, for example `https://raw.githubusercontent.com/Noctyde/pane-ui/v1.5.1/src/PaneUI.lua`; `Library.Version` says which one is running.
+`main` always holds the newest version. To keep a script on one version, load a release tag instead, for example `https://raw.githubusercontent.com/Noctyde/pane-ui/v1.6.0/src/PaneUI.lua`; `Library.Version` says which one is running.
 
 ## What the window can do
 
@@ -37,6 +37,7 @@ Library:LoadAutoloadConfig()     -- last, once every element with a Flag exists
 - **Traffic lights.** Red asks whether to unload the script, yellow minimizes the window to a tile at the bottom of the screen, green zooms it to fill the screen.
 - **Drag** by the title bar and **resize** from any edge or corner.
 - **Blur the game** behind the open window, turned on in Settings. Roblox blurs the whole 3D world, not just the area behind the window; the interface stays sharp.
+- **Styles.** Besides the theme (light or dark) the user picks what the interface is made of: **Classic** is solid, **Glass** has translucent panes and buttons, a body that darkens towards the bottom and a light along the top edge. Window bodies and menus stay nearly solid, because Roblox cannot blur interface behind interface and a window under another would show its text through sharp. Glass looks best with **Blur the game** on.
 
 ### Animations
 Switches, sliders, segmented controls, radio buttons and menus move on springs: they overshoot slightly and settle into place. The sidebar highlight slides between tabs. A new page slides in from below or above depending on which way you switched, and its rows appear in a cascade. Numbers on sliders, steppers and progress bars count up to their new value. The window "lifts" while you drag it and its shadow deepens. A minimized window flies along an arc into the tile at the bottom of the screen, and the tile bounces. This is macOS's Scale effect: a real Genie effect needs to bend the window, which Roblox GUIs cannot do. Dialogs slide out from under the title bar like a sheet. Banners can be swiped away to the right, their timer pauses on hover, and a bar along the bottom shows the time left.
@@ -46,10 +47,10 @@ Switches, sliders, segmented controls, radio buttons and menus move on springs: 
 ### Library
 | | |
 |---|---|
-| `CreateWindow(opts)` | `Title`, `Subtitle`, `Icon`, `IconColor`, `Size` (UDim2 in pixels), `MinSize`, `SidebarWidth`, `Theme` (`"Dark"`/`"Light"`), `Accent`, `Language` (`"en"`/`"ru"`), `Scale` (`"Auto"` or a number such as `1.25`), `ToggleKey`, `ConfigFolder` (`false` disables files), `Watermark`, `KeybindList`, `HideToDock` (the window key minimizes to a tile at the bottom, `true` by default; `false` hides it completely), `Blur` (blur the game behind the window), `CloseBehavior` (`"Unload"` or `"Hide"`) |
+| `CreateWindow(opts)` | `Title`, `Subtitle`, `Icon`, `IconColor`, `Size` (UDim2 in pixels), `MinSize`, `SidebarWidth`, `Theme` (`"Dark"`/`"Light"`), `Style` (`"Classic"`/`"Glass"`), `Accent`, `Language` (`"en"`/`"ru"`), `Scale` (`"Auto"` or a number such as `1.25`), `ToggleKey`, `ConfigFolder` (`false` disables files), `Watermark`, `KeybindList`, `HideToDock` (the window key minimizes to a tile at the bottom, `true` by default; `false` hides it completely), `Blur` (blur the game behind the window), `CloseBehavior` (`"Unload"` or `"Hide"`) |
 | `Notify(opts)` | `Title`, `Content`, `Type` (`"Info"`, `"Success"`, `"Warning"`, `"Error"`), `Duration`, `Buttons = { { Text, Style, Callback } }`, `Callback` on click. Every banner goes into `NotificationHistory` and the notification center |
 | `ClearNotifications()` | clears the notification history |
-| `SetTheme`, `SetAccent`, `SetScale`, `SetLanguage`, `SetToggleKey`, `SetWatermark`, `SetKeybindList`, `SetHideToDock`, `SetBlur` | change a setting, save it to `<ConfigFolder>/settings.json` and update the Settings tab. The user's saved choice overrides the values passed to `CreateWindow` |
+| `SetTheme`, `SetStyle`, `SetAccent`, `SetScale`, `SetLanguage`, `SetToggleKey`, `SetWatermark`, `SetKeybindList`, `SetHideToDock`, `SetBlur` | change a setting, save it to `<ConfigFolder>/settings.json` and update the Settings tab. The user's saved choice overrides the values passed to `CreateWindow` |
 | `Options[flag]` | an element by its `Flag` |
 | `SaveConfig`, `LoadConfig`, `DeleteConfig`, `ListConfigs` | configs in `<ConfigFolder>/configs/*.json` |
 | `ExportConfig()`, `ImportConfig(text)` | a config as text, for sharing without files |
@@ -59,7 +60,7 @@ Switches, sliders, segmented controls, radio buttons and menus move on springs: 
 | `OnLanguageChanged(fn)` | `fn(code)` after every language change, so the script can translate its own text. The current language is in `Library.Language` |
 | `AddPaletteProvider(fn)` | adds commands to the palette: `fn()` returns a list of `{ Title, Path, Icon, IconColor, Hint, Keywords, Run }`, is asked again on every keystroke, and the palette keeps the items whose title, path or keywords match |
 | `OnUnload(fn)`, `Unload()` | stop your own loops on unload. Running the script again with the same `Title` unloads the previous copy by itself |
-| `Icons`, `Languages`, `Themes`, `Accents` | the icon set, translations, theme palettes, accent presets |
+| `Icons`, `Languages`, `Themes`, `Styles`, `Accents` | the icon set, translations, theme palettes, styles, accent presets |
 
 ### Icons
 `Icon` on the window and tabs takes a name from `Library.Icons`, an image ID or a short glyph. Without an icon, the first letter of the title is drawn. The set has 85 Lucide icons: `home`, `settings`, `user`, `users`, `eye`, `eye-off`, `sword`, `swords`, `crosshair`, `target`, `shield`, `flame`, `star`, `heart`, `map`, `map-pin`, `compass`, `globe`, `search`, `info`, `alert-triangle`, `alert-circle`, `check`, `x`, `bell`, `clock`, `folder`, `file`, `save`, `download`, `upload`, `copy`, `trash`, `trash-2`, `pencil`, `refresh-cw`, `rotate-ccw`, `play`, `pause`, `power`, `lock`, `unlock`, `key`, `keyboard`, `mouse-pointer`, `gamepad-2`, `monitor`, `palette`, `paintbrush`, `sun`, `moon`, `wand-2`, `bot`, `box`, `package`, `gift`, `coins`, `gem`, `shopping-cart`, `trophy`, `crown`, `flag`, `rocket`, `car`, `move`, `activity`, `bar-chart`, `code`, `terminal`, `bug`, `wrench`, `sliders`, `layers`, `list`, `layout-grid`, `command`, `axe`, `skull`, `ghost`, `wifi`, `cloud`, `message-circle`, `music`, `camera`, `image`.
@@ -106,6 +107,16 @@ Library.Languages.de = { Settings = "Einstellungen", ... }
 table.insert(Library.LanguageNames, { Code = "de", Name = "Deutsch" })
 ```
 
+### Adding a style
+A style is laid over the theme's palette: a table per theme with the keys it changes. Next to colors it can set `<Key>Transparency` for a surface color (`GroupTransparency = 0.5` makes sections see-through, `PopupStrokeTransparency` the outline of popups), `Sheen` (0..1, how much darker window bodies get towards the bottom) and `Rim` (0..1, how much their outline fades towards the bottom). `Order` is its place in Settings, where it is listed under `Strings["Style" .. name]` in each language that has it and under its own name otherwise. Add it before creating the window.
+
+```lua
+Library.Styles.Midnight = {
+    Order = 3,
+    Dark = { Background = Color3.fromRGB(14, 16, 28), Group = Color3.fromRGB(26, 30, 48), GroupTransparency = 0.3, Sheen = 0.2 },
+}
+```
+
 ### Translating your script
 The library translates only its own strings. Change your script's text in `Library:OnLanguageChanged`: elements have `SetTitle`, `SetDescription` and `SetTooltip`, tabs and sections have `SetTitle`, and the window has `SetSubtitle`.
 
@@ -128,12 +139,13 @@ end)
 ```
 
 ### Drawing your own pieces
-`Library.Kit` holds the building blocks the library is made of, for a script that draws something of its own (a HUD, a splash screen) and wants it to look the same: `New`, `Bind` (keeps a property in sync with the theme), `Spring`, `Animate`, `Shadow`, `AppIcon`, `PushButton`, `ScaleTarget`, `Connect`, `Fonts` and the rest. Parent your instances to `Kit.GetScreenGui()` and they follow theme, accent and scale changes and go away on `Unload()`. `Kit.LoadSettings(folder)` reads the saved theme, accent and scale before any window exists.
+`Library.Kit` holds the building blocks the library is made of, for a script that draws something of its own (a HUD, a splash screen) and wants it to look the same: `New`, `Bind` (keeps a property in sync with the theme), `Surface` and `Stroke` (a fill or outline in a theme color that is as see-through as the style says), `Sheen(body, stroke)` (the style's light on a window), `Spring`, `Animate`, `Shadow`, `AppIcon`, `PushButton`, `ScaleTarget`, `Connect`, `Fonts` and the rest. Parent your instances to `Kit.GetScreenGui()` and they follow theme, style, accent and scale changes and go away on `Unload()`. A window of your own blurs the game like the library's when you pass it to `Kit.TrackWindow(window)` (anything with `Visible` and `Minimized`) and call `Kit.UpdateBlur()` when it shows or hides. `Kit.LoadSettings(folder)` reads the saved theme, style, accent and scale before any window exists.
 
 ```lua
 local Kit = Library.Kit
-local panel = Kit.Bind(Kit.New("Frame", { Size = UDim2.fromOffset(200, 60), Parent = Kit.GetScreenGui() }), { BackgroundColor3 = "Popup" })
+local panel = Kit.Surface(Kit.New("Frame", { Size = UDim2.fromOffset(200, 60), Parent = Kit.GetScreenGui() }), "Popup")
 Kit.Corner(14, panel)
+Kit.Stroke(panel, "PopupStroke")
 Kit.ScaleTarget(Kit.New("UIScale", { Parent = panel }))
 ```
 

@@ -44,11 +44,12 @@ end
 --==============================================================
 
 local Library = {
-    Version = "1.5.1",
+    Version = "1.6.0",
     Options = {},
     Windows = {},
     Unloaded = false,
     ThemeName = "Dark",
+    StyleName = "Classic",
     Accent = rgb(10, 132, 255),
     ToggleKey = Enum.KeyCode.RightShift,
     Language = "en",
@@ -69,6 +70,10 @@ Library.Languages = {
         Theme = "Theme",
         Light = "Light",
         Dark = "Dark",
+        Style = "Style",
+        StyleDescription = "What windows are made of",
+        StyleClassic = "Classic",
+        StyleGlass = "Glass",
         AccentColor = "Accent color",
         InterfaceSize = "Interface size",
         InterfaceSizeDescription = "Auto picks a size from the screen resolution",
@@ -159,6 +164,10 @@ Library.Languages = {
         Theme = "Тема",
         Light = "Светлая",
         Dark = "Тёмная",
+        Style = "Стиль",
+        StyleDescription = "Из чего сделаны окна",
+        StyleClassic = "Классика",
+        StyleGlass = "Стекло",
         AccentColor = "Цвет акцента",
         InterfaceSize = "Размер интерфейса",
         InterfaceSizeDescription = "«Авто» подбирает размер под разрешение экрана",
@@ -318,6 +327,74 @@ Library.Themes = {
         ShadowOpacity = 0.14,
         Scrollbar = rgb(170, 170, 176),
         AccentText = rgb(255, 255, 255),
+    },
+}
+
+-- A style changes what the interface is made of, on top of the theme's
+-- colors: its table for the current theme (Dark or Light) is laid over the
+-- palette. Besides colors it can set:
+--   <Key>Transparency  surfaces in the color <Key> (Group, Popup,
+--                      GroupStroke...) let that much of what is behind them
+--                      through: those drawn with Kit.Surface or Kit.Stroke,
+--                      and push buttons (Control, ControlStroke)
+--   Sheen              0..1, how much darker window bodies get towards the
+--                      bottom, as if lit from above
+--   Rim                0..1, how much window outlines fade towards the
+--                      bottom, so the top edge catches the light
+-- Classic adds nothing. Scripts may add styles: Order sets their place in
+-- Settings, and Strings["Style" .. name] their name there.
+Library.Styles = {
+    Classic = { Order = 1 },
+    Glass = {
+        Order = 2,
+        -- Window bodies and popups stay nearly solid: Roblox cannot blur
+        -- interface behind interface, so a window or a menu over another
+        -- would show its text through sharp. The glass shows in the panes
+        -- and buttons inside them, and in the light along their edges.
+        Dark = {
+            Background = rgb(30, 30, 36),
+            BackgroundTransparency = 0.08,
+            Sidebar = rgb(40, 40, 48),
+            SidebarTransparency = 0.55,
+            Group = rgb(64, 64, 74),
+            GroupTransparency = 0.5,
+            GroupStroke = rgb(255, 255, 255),
+            GroupStrokeTransparency = 0.9,
+            WindowStroke = rgb(255, 255, 255),
+            WindowStrokeTransparency = 0.78,
+            Popup = rgb(34, 34, 40),
+            PopupTransparency = 0.03,
+            PopupStroke = rgb(255, 255, 255),
+            PopupStrokeTransparency = 0.82,
+            Control = rgb(92, 92, 102),
+            ControlHover = rgb(108, 108, 118),
+            ControlTransparency = 0.45,
+            ControlStroke = rgb(130, 130, 140),
+            ControlStrokeTransparency = 0.6,
+            ShadowOpacity = 0.22,
+            Sheen = 0.35,
+            Rim = 0.75,
+        },
+        Light = {
+            Background = rgb(250, 250, 253),
+            BackgroundTransparency = 0.08,
+            Sidebar = rgb(236, 236, 242),
+            SidebarTransparency = 0.5,
+            Group = rgb(255, 255, 255),
+            GroupTransparency = 0.35,
+            GroupStroke = rgb(255, 255, 255),
+            GroupStrokeTransparency = 0.35,
+            WindowStroke = rgb(255, 255, 255),
+            WindowStrokeTransparency = 0.25,
+            Popup = rgb(250, 250, 252),
+            PopupTransparency = 0.03,
+            PopupStroke = rgb(255, 255, 255),
+            PopupStrokeTransparency = 0.3,
+            ControlTransparency = 0.3,
+            ShadowOpacity = 0.12,
+            Sheen = 0.06,
+            Rim = 0.6,
+        },
     },
 }
 
@@ -1248,6 +1325,10 @@ end
 local function BuildTheme()
     local palette = Library.Themes[Library.ThemeName] or Library.Themes.Dark
     local theme = CopyTable(palette)
+    local style = Library.Styles[Library.StyleName] or Library.Styles.Classic
+    for key, value in pairs(style[Library.ThemeName] or {}) do
+        theme[key] = value
+    end
     theme.Accent = Library.Accent
     Library.Theme = theme
 end
@@ -1261,17 +1342,31 @@ local function Resolve(value)
     return Library.Theme[value]
 end
 
+-- TweenService moves numbers, colors and sizes; anything else a binding
+-- returns (a gradient's ColorSequence, a bool) is set at once.
+local Tweenable = {
+    number = true,
+    Color3 = true,
+    UDim = true,
+    UDim2 = true,
+    Vector2 = true,
+    Vector3 = true,
+    CFrame = true,
+    Rect = true,
+}
+
 local function Apply(instance, props, info)
     local goal = {}
     for property, value in pairs(props) do
-        goal[property] = Resolve(value)
-    end
-    if info then
-        Tween(instance, info, goal)
-    else
-        for property, value in pairs(goal) do
-            instance[property] = value
+        local resolved = Resolve(value)
+        if info and Tweenable[typeof(resolved)] then
+            goal[property] = resolved
+        else
+            instance[property] = resolved
         end
+    end
+    if info and next(goal) then
+        Tween(instance, info, goal)
     end
 end
 
@@ -1404,6 +1499,46 @@ end
 local function RefreshShadow(holder, info)
     for _, layer in ipairs(holder:GetChildren()) do
         Refresh(layer, info)
+    end
+end
+
+-- A frame filled with the theme color `key`, which the style may make
+-- see-through (see Library.Styles).
+local function Surface(instance, key)
+    return Bind(instance, {
+        BackgroundColor3 = key,
+        BackgroundTransparency = function(theme)
+            return theme[key .. "Transparency"] or 0
+        end,
+    })
+end
+
+-- An outline in the theme color `key`, see-through as the style says.
+local function Stroke(parent, key)
+    return Bind(New("UIStroke", { Parent = parent }), {
+        Color = key,
+        Transparency = function(theme)
+            return theme[key .. "Transparency"] or 0
+        end,
+    })
+end
+
+-- The style's light on a window: its body darkens towards the bottom
+-- (Sheen) and its outline fades there (Rim). Neutral where the style has
+-- neither.
+local function Sheen(body, stroke)
+    Bind(New("UIGradient", { Rotation = 90, Parent = body }), {
+        Color = function(theme)
+            local bottom = 1 - (theme.Sheen or 0)
+            return ColorSequence.new(Color3.new(1, 1, 1), Color3.new(bottom, bottom, bottom))
+        end,
+    })
+    if stroke then
+        Bind(New("UIGradient", { Rotation = 90, Parent = stroke }), {
+            Transparency = function(theme)
+                return NumberSequence.new(0, theme.Rim or 0)
+            end,
+        })
     end
 end
 
@@ -1967,6 +2102,9 @@ local function PushButton(parent, text, style, callback)
 
     Bind(button, {
         BackgroundColor3 = fill,
+        BackgroundTransparency = function(theme)
+            return style == "Primary" and 0 or theme.ControlTransparency or 0
+        end,
         TextColor3 = function(theme)
             if style == "Primary" then
                 return theme.AccentText
@@ -1980,8 +2118,8 @@ local function PushButton(parent, text, style, callback)
         Color = function(theme)
             return style == "Primary" and theme.Accent or theme.ControlStroke
         end,
-        Transparency = function()
-            return style == "Primary" and 1 or 0
+        Transparency = function(theme)
+            return style == "Primary" and 1 or theme.ControlStrokeTransparency or 0
         end,
     })
 
@@ -4102,15 +4240,15 @@ function Tab:AddSection(title, opts)
             end)
         end
     end
-    local group = Bind(New("Frame", {
+    local group = Surface(New("Frame", {
         Name = "Group",
         Size = UDim2.new(1, 0, 0, 0),
         AutomaticSize = Enum.AutomaticSize.Y,
         LayoutOrder = 2,
         Parent = holder,
-    }), { BackgroundColor3 = "Group" })
+    }), "Group")
     Corner(10, group)
-    Bind(New("UIStroke", { Parent = group }), { Color = "GroupStroke" })
+    Stroke(group, "GroupStroke")
     List(group, 0)
     section.Holder = holder
     section.Group = group
@@ -4204,12 +4342,21 @@ end
 -- Roblox can only blur the whole scene, not just the area behind the
 -- window; the interface itself stays sharp.
 local BlurInstance
+-- Windows a script draws itself with Kit that should blur the game as the
+-- library's own do: anything with Visible and Minimized fields.
+local TrackedWindows = {}
+local function TrackWindow(window)
+    table.insert(TrackedWindows, window)
+end
+
 local function UpdateBlur()
     local wanted = false
     if Library.BlurBackground and not Library.Unloaded then
-        for _, window in ipairs(Library.Windows) do
-            if window.Visible and not window.Minimized then
-                wanted = true
+        for _, list in ipairs({ Library.Windows, TrackedWindows }) do
+            for _, window in ipairs(list) do
+                if window.Visible and not window.Minimized then
+                    wanted = true
+                end
             end
         end
     end
@@ -4287,6 +4434,9 @@ function Library:CreateWindow(opts)
     if opts.Theme and self.Themes[opts.Theme] and not saved.Theme then
         self.ThemeName = opts.Theme
     end
+    if opts.Style and self.Styles[opts.Style] and not saved.Style then
+        self.StyleName = opts.Style
+    end
     if opts.Accent and not saved.Accent then
         self.Accent = opts.Accent
     end
@@ -4358,30 +4508,33 @@ function Library:CreateWindow(opts)
     shadow.Position = UDim2.fromOffset(SHADOW_MARGIN, SHADOW_MARGIN)
     shadow.Size = UDim2.new(1, -SHADOW_MARGIN * 2, 1, -SHADOW_MARGIN * 2)
 
-    local frame = Bind(New("Frame", {
+    local frame = Surface(New("Frame", {
         Name = "Body",
         Position = UDim2.fromOffset(SHADOW_MARGIN, SHADOW_MARGIN),
         Size = UDim2.new(1, -SHADOW_MARGIN * 2, 1, -SHADOW_MARGIN * 2),
         ZIndex = 1,
         Parent = root,
-    }), { BackgroundColor3 = "Background" })
+    }), "Background")
     Corner(12, frame)
-    Bind(New("UIStroke", { Parent = frame }), { Color = "WindowStroke" })
+    Sheen(frame, Stroke(frame, "WindowStroke"))
 
-    -- Sidebar: rounded on the left, square on the right.
-    local sidebar = Bind(New("Frame", {
+    -- Sidebar: rounded on the left, square on the right. Its fill is wider
+    -- than the sidebar and clipped on the right, rather than squared off
+    -- by a second frame, so nothing overlaps where a style makes it
+    -- see-through.
+    local sidebar = New("Frame", {
         Name = "Sidebar",
+        BackgroundTransparency = 1,
+        ClipsDescendants = true,
         Size = UDim2.new(0, window.SidebarWidth, 1, 0),
         Parent = frame,
-    }), { BackgroundColor3 = "Sidebar" })
-    Corner(12, sidebar)
-    Bind(New("Frame", {
-        Name = "Square",
-        AnchorPoint = Vector2.new(1, 0),
-        Position = UDim2.fromScale(1, 0),
-        Size = UDim2.new(0, 14, 1, 0),
+    })
+    Corner(12, Surface(New("Frame", {
+        Name = "Fill",
+        Size = UDim2.new(1, 14, 1, 0),
+        ZIndex = 0,
         Parent = sidebar,
-    }), { BackgroundColor3 = "Sidebar" })
+    }), "Sidebar"))
     Bind(New("Frame", {
         Name = "Divider",
         AnchorPoint = Vector2.new(1, 0),
@@ -4953,9 +5106,9 @@ function Window:Minimize()
             Parent = gui,
         })
         ScaleTarget(New("UIScale", { Parent = dock }))
-        Bind(dock, { BackgroundColor3 = "Popup" })
+        Surface(dock, "Popup")
         Corner(14, dock)
-        Bind(New("UIStroke", { Parent = dock }), { Color = "PopupStroke" })
+        Stroke(dock, "PopupStroke")
         Pad(dock, 8, 14, 8, 8)
         List(dock, 10, Enum.FillDirection.Horizontal, { VerticalAlignment = Enum.VerticalAlignment.Center })
         local icon = AppIcon(dock, 32, self.Icon, self.IconColor, self.Title, 8)
@@ -5106,15 +5259,15 @@ function Window:_popupAt(x, y, width, height, onClose, above)
     local py = math.floor(y / s + 0.5)
 
     -- A button, so clicks on its empty areas do not fall through to the catcher.
-    local popup = Bind(New("TextButton", {
+    local popup = Surface(New("TextButton", {
         Name = "Popup",
         Position = UDim2.fromOffset(px, py + (above and 6 or -6)),
         Size = UDim2.fromOffset(width, height),
         ZIndex = 51,
         Parent = self.Overlay,
-    }), { BackgroundColor3 = "Popup" })
+    }), "Popup")
     Corner(9, popup)
-    Bind(New("UIStroke", { Parent = popup }), { Color = "PopupStroke" })
+    Stroke(popup, "PopupStroke")
     -- The shadow sits in its own frame so the popup's UIPadding does not shift it.
     local shadowHolder = New("Frame", {
         BackgroundTransparency = 1,
@@ -5264,15 +5417,15 @@ end
 
 function Window:_showTooltip(text)
     if not self.Tooltip then
-        local tip = Bind(New("Frame", {
+        local tip = Surface(New("Frame", {
             Name = "Tooltip",
             AutomaticSize = Enum.AutomaticSize.XY,
             Visible = false,
             ZIndex = 70,
             Parent = self.Overlay,
-        }), { BackgroundColor3 = "Popup" })
+        }), "Popup")
         Corner(6, tip)
-        Bind(New("UIStroke", { Parent = tip }), { Color = "PopupStroke" })
+        Stroke(tip, "PopupStroke")
         Pad(tip, 5, 8, 5, 8)
         self.TooltipLabel = FitText(Bind(New("TextLabel", {
             TextSize = 12,
@@ -5334,16 +5487,16 @@ function Window:Dialog(opts)
         Parent = dim,
     })
     local hidden = UDim2.new(0.5, 0, 0, -360)
-    local box = Bind(New("Frame", {
+    local box = Surface(New("Frame", {
         AnchorPoint = Vector2.new(0.5, 0),
         Position = hidden,
         Size = UDim2.fromOffset(280, 0),
         AutomaticSize = Enum.AutomaticSize.Y,
         ZIndex = 31,
         Parent = clip,
-    }), { BackgroundColor3 = "Popup" })
+    }), "Popup")
     Corner(12, box)
-    Bind(New("UIStroke", { Parent = box }), { Color = "PopupStroke" })
+    Stroke(box, "PopupStroke")
     Pad(box, 18, 16, 16, 16)
     List(box, 8, Enum.FillDirection.Vertical, { HorizontalAlignment = Enum.HorizontalAlignment.Center })
     Spring(box, { Position = UDim2.new(0.5, 0, 0, 14) }, 3.6, 0.78)
@@ -5626,13 +5779,13 @@ function Window:_staggerRows(tab)
                 local row = element.Row
                 if count < 18 and row and row.Parent and row.Visible and element.TextBlock then
                     count = count + 1
-                    local cover = Bind(New("Frame", {
+                    local cover = Surface(New("Frame", {
                         Name = "Reveal",
                         Size = UDim2.new(1, 20, 1, 14),
                         Position = UDim2.fromOffset(-10, -7),
                         ZIndex = 40,
                         Parent = row,
-                    }), { BackgroundColor3 = "Group" })
+                    }), "Group")
                     Corner(7, cover)
                     local block = element.TextBlock
                     element.TextOrigin = element.TextOrigin or block.Position
@@ -5704,14 +5857,14 @@ function Window:_search(query)
         return
     end
 
-    local group = Bind(New("Frame", {
+    local group = Surface(New("Frame", {
         Name = "Results",
         Size = UDim2.new(1, 0, 0, 0),
         AutomaticSize = Enum.AutomaticSize.Y,
         Parent = page,
-    }), { BackgroundColor3 = "Group" })
+    }), "Group")
     Corner(10, group)
-    Bind(New("UIStroke", { Parent = group }), { Color = "GroupStroke" })
+    Stroke(group, "GroupStroke")
     List(group, 0)
 
     for index, element in ipairs(results) do
@@ -5777,12 +5930,12 @@ function Window:_search(query)
         end)
         if index <= 12 then
             -- Results fade in one after another, like the rows of a tab.
-            local cover = Bind(New("Frame", {
+            local cover = Surface(New("Frame", {
                 Position = UDim2.fromOffset(4, 4),
                 Size = UDim2.new(1, -8, 1, -8),
                 ZIndex = 40,
                 Parent = row,
-            }), { BackgroundColor3 = "Group" })
+            }), "Group")
             Corner(7, cover)
             task.delay((index - 1) * 0.025, function()
                 Tween(cover, Tweens.Normal, { BackgroundTransparency = 1 })
@@ -5871,14 +6024,14 @@ local function FillCenter()
         return
     end
     for index, entry in ipairs(history) do
-        local card = Bind(New("Frame", {
+        local card = Surface(New("Frame", {
             Size = UDim2.new(1, 0, 0, 0),
             AutomaticSize = Enum.AutomaticSize.Y,
             LayoutOrder = index,
             Parent = list,
-        }), { BackgroundColor3 = "Group" })
+        }), "Group")
         Corner(10, card)
-        Bind(New("UIStroke", { Parent = card }), { Color = "GroupStroke" })
+        Stroke(card, "GroupStroke")
         Pad(card, 10, 12, 10, 10)
         local icon = AppIcon(card, 28, entry.Icon, entry.IconColor, entry.AppTitle, 7)
         StatusBadge(icon, entry.Type)
@@ -5949,13 +6102,13 @@ function Window:OpenNotificationCenter()
     })
     ScaleTarget(New("UIScale", { Parent = mover }))
     Shadow(mover, 14, 14, 65)
-    local panel = Bind(New("Frame", {
+    local panel = Surface(New("Frame", {
         Size = UDim2.fromScale(1, 1),
         ZIndex = 66,
         Parent = mover,
-    }), { BackgroundColor3 = "Popup" })
+    }), "Popup")
     Corner(14, panel)
-    Bind(New("UIStroke", { Parent = panel }), { Color = "PopupStroke" })
+    Sheen(panel, Stroke(panel, "PopupStroke"))
     Bind(New("TextLabel", {
         Text = Library.Strings.Notifications,
         FontFace = Fonts.Bold,
@@ -6187,13 +6340,13 @@ function Window:OpenPalette()
     ScaleTarget(New("UIScale", { Parent = mover }))
     Spring(mover, { Position = UDim2.new(0.5, 0, 0, top) }, 4.5, 0.75)
     Shadow(mover, 18, 14, 81)
-    local panel = Bind(New("Frame", {
+    local panel = Surface(New("Frame", {
         Size = UDim2.fromScale(1, 1),
         ZIndex = 82,
         Parent = mover,
-    }), { BackgroundColor3 = "Popup" })
+    }), "Popup")
     Corner(14, panel)
-    Bind(New("UIStroke", { Parent = panel }), { Color = "PopupStroke" })
+    Sheen(panel, Stroke(panel, "PopupStroke"))
     Bind(New("ImageLabel", {
         Image = Library.Icons.search,
         Position = UDim2.fromOffset(18, 16),
@@ -6408,6 +6561,26 @@ local function ScaleLabel(setting)
     return math.floor(setting * 100 + 0.5) .. "%"
 end
 
+local function StyleLabel(name)
+    return Library.Strings["Style" .. name] or name
+end
+
+-- Style names in their Settings order.
+local function StyleNames()
+    local names = {}
+    for name in pairs(Library.Styles) do
+        table.insert(names, name)
+    end
+    table.sort(names, function(a, b)
+        local orderA, orderB = Library.Styles[a].Order or math.huge, Library.Styles[b].Order or math.huge
+        if orderA ~= orderB then
+            return orderA < orderB
+        end
+        return a < b
+    end)
+    return names
+end
+
 -- Keeps the Settings tab in step when a setting changes from code.
 local function SyncSettings(name, value)
     for _, window in ipairs(Library.Windows) do
@@ -6439,6 +6612,23 @@ function Window:_buildSettings(opts, order, index)
         Default = Library.ThemeName == "Light" and strings.Light or strings.Dark,
         Callback = function(value)
             Library:SetTheme(value == strings.Light and "Light" or "Dark")
+        end,
+    })
+    local styleValues = {}
+    for _, name in ipairs(StyleNames()) do
+        table.insert(styleValues, StyleLabel(name))
+    end
+    controls.Style = appearance:AddSegmented({
+        Title = strings.Style,
+        Description = strings.StyleDescription,
+        Values = styleValues,
+        Default = StyleLabel(Library.StyleName),
+        Callback = function(value)
+            for _, name in ipairs(StyleNames()) do
+                if StyleLabel(name) == value then
+                    Library:SetStyle(name)
+                end
+            end
         end,
     })
     appearance:_addAccentRow(strings.AccentColor)
@@ -6751,19 +6941,19 @@ function Library:Notify(opts)
         Parent = slot,
     })
     Shadow(mover, 10, 14, 0)
-    local banner = Bind(New("Frame", {
+    local banner = Surface(New("Frame", {
         Size = UDim2.new(1, 0, 0, 0),
         AutomaticSize = Enum.AutomaticSize.Y,
         ZIndex = 1,
         Parent = mover,
-    }), { BackgroundColor3 = "Popup" })
+    }), "Popup")
     local function syncHeight()
         mover.Size = UDim2.new(1, 0, 0, banner.AbsoluteSize.Y / EffectiveScale(banner))
     end
     banner:GetPropertyChangedSignal("AbsoluteSize"):Connect(syncHeight)
     syncHeight()
     Corner(14, banner)
-    Bind(New("UIStroke", { Parent = banner }), { Color = "PopupStroke" })
+    Sheen(banner, Stroke(banner, "PopupStroke"))
     Pad(banner, 12, 14, 12, 12)
 
     -- Like macOS, the banner shows the app's icon; a badge marks the type.
@@ -6959,16 +7149,16 @@ end
 --==============================================================
 
 local function OverlayFrame(name, props)
-    local frame = Bind(New("Frame", {
+    local frame = Surface(New("Frame", {
         Name = name,
         ZIndex = 55,
         Parent = GetScreenGui(),
-    }), { BackgroundColor3 = "Popup" })
+    }), "Popup")
     for key, value in pairs(props) do
         frame[key] = value
     end
     ScaleTarget(New("UIScale", { Parent = frame }))
-    Bind(New("UIStroke", { Parent = frame }), { Color = "PopupStroke" })
+    Stroke(frame, "PopupStroke")
     return frame
 end
 
@@ -7207,6 +7397,17 @@ function Library:SetTheme(name)
     self:_saveSettings()
 end
 
+function Library:SetStyle(name)
+    if not self.Styles[name] then
+        return
+    end
+    self.StyleName = name
+    BuildTheme()
+    ApplyThemeEverywhere()
+    SyncSettings("Style", StyleLabel(name))
+    self:_saveSettings()
+end
+
 function Library:SetAccent(color)
     self.Accent = color
     BuildTheme()
@@ -7303,6 +7504,10 @@ function Library:_loadSettings()
         self.ThemeName = data.Theme
         saved.Theme = true
     end
+    if data.Style and self.Styles[data.Style] then
+        self.StyleName = data.Style
+        saved.Style = true
+    end
     if data.Accent then
         local color = HexToColor(data.Accent)
         if color then
@@ -7353,6 +7558,7 @@ function Library:_saveSettings()
         EnsureFolder(self.Folder)
         writefile(self.Folder .. "/settings.json", HttpService:JSONEncode({
             Theme = self.ThemeName,
+            Style = self.StyleName,
             Accent = ColorToHex(self.Accent),
             ToggleKey = self.ToggleKey and self.ToggleKey.Name or nil,
             Language = self.Language,
@@ -7620,6 +7826,7 @@ function Library:Unload()
     Watermark = nil
     KeybindPanel = nil
     ScaleTargets = {}
+    TrackedWindows = {}
     LanguageListeners = {}
     LanguageCallbacks = {}
 end
@@ -7647,6 +7854,11 @@ Library.Kit = {
     -- Theme: Bind(instance, { Property = "ThemeKey" | function(theme) })
     Bind = Bind,
     Refresh = Refresh,
+    -- Style: Surface(frame, "Group"), Stroke(parent, "GroupStroke") and
+    -- Sheen(body, stroke) look the way the current style says
+    Surface = Surface,
+    Stroke = Stroke,
+    Sheen = Sheen,
     -- Scale and language
     ScaleTarget = ScaleTarget,
     EffectiveScale = EffectiveScale,
@@ -7678,6 +7890,7 @@ Library.Kit = {
     ResolveIcon = ResolveIcon,
     PushButton = PushButton,
     UpdateBlur = UpdateBlur,
+    TrackWindow = TrackWindow,
     -- Input and events; Connect's connections end on Unload
     Connect = Connect,
     TrackDrag = TrackDrag,
